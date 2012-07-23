@@ -15,7 +15,8 @@ def present(name,
             createdb=False,
             createuser=False,
             encrypted=False,
-            password=None,
+            user=None,
+            pgpassword=None,
             host=None,
             port=None):
     '''
@@ -33,7 +34,10 @@ def present(name,
     encrypted
         Shold the password be encrypted in the system catalog?
 
-    password
+    user
+        Use user for this connection
+
+    pgpassword
         The user's pasword
 
     host
@@ -48,7 +52,8 @@ def present(name,
            'comment': 'User {0} is already present'.format(name)}
 
     # check if user exists
-    if __salt__['postgres.user_exists'](name, host=host, port=port):
+    if __salt__['postgres.user_exists'](name, user=user,
+            pgpassword=pgpassword, host=host, port=port):
         return ret
 
     # The user is not present, make it!
@@ -61,7 +66,8 @@ def present(name,
             createdb=createdb,
             createuser=createuser,
             encrypted=encrypted,
-            password=password,
+            user=user,
+            pgpassword=pgpassword,
             host=host,
             port=port):
         ret['comment'] = 'The user {0} has been created'.format(name)
@@ -73,12 +79,18 @@ def present(name,
     return ret
 
 
-def absent(name, host=None, port=None):
+def absent(name, user=None, pgpassword=None, host=None, port=None):
     '''
     Ensure that the named user is absent
 
     name
         The username of the user to remove
+
+    user
+        Use user for this connection
+
+    pgpassword
+        The user's pasword
 
     host
         The host of the database server
@@ -92,17 +104,19 @@ def absent(name, host=None, port=None):
            'comment': ''}
 
     # check if user exists and remove it
-    if __salt__['postgres.user_exists'](name, host=host, port=port):
+    if __salt__['postgres.user_exists'](name, user=user,
+            pgpassword=pgpassword, host=host, port=port):
         if __opts__['test']:
             ret['result'] = None
             ret['comment'] = 'User {0} is set to be removed'.format(name)
             return ret
-        if __salt__['postgres.user_remove'](name, host=host, port=port):
+        if __salt__['postgres.user_remove'](name, user=user,
+                pgpassword=pgpassword, host=host, port=port):
             ret['comment'] = 'User {0} has been removed'.format(name)
             ret['changes'][name] = 'Absent'
             return ret
     else:
         ret['comment'] = ('User {0} is not present, '
                 'so it cannot be removed').format(name)
-    
+
     return ret

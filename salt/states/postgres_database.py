@@ -17,8 +17,8 @@ def present(
         owner=None,
         pguser=None,
         pgpassword=None,
-        host=None,
-        port=None):
+        pghost=None,
+        pgport=None):
     '''
     Ensure that the named database is present with the specified properties
 
@@ -34,11 +34,11 @@ def present(
     pgpassword
         User pgpassword for authenticating pguser
 
-    host
-        The host of the database server
+    pghost
+        The pghost of the database server
 
-    port
-        The port of the database server
+    pgport
+        The pgport of the database server
     '''
     ret = {'name': name,
            'changes': {},
@@ -47,7 +47,7 @@ def present(
 
     # check if database exists
     if __salt__['postgres.db_exists'](name, pguser=pguser, pgpassword=pgpassword,
-            host=host, port=port):
+            pghost=pghost, pgport=pgport):
         return ret
 
     # The database is not present, make it!
@@ -56,7 +56,7 @@ def present(
         ret['comment'] = 'Database {0} is set to be created'.format(name)
         return ret
     if __salt__['postgres.db_create'](name, owner=owner, pguser=pguser,
-            pgpassword=pgpassword, host=host, port=port):
+            pgpassword=pgpassword, pghost=pghost, pgport=pgport):
         ret['comment'] = 'The database {0} has been created'.format(name)
         ret['changes'][name] = 'Present'
     else:
@@ -66,7 +66,7 @@ def present(
     return ret
 
 
-def absent(name, pguser=None, pgpassword=None, host=None, port=None):
+def absent(name, pguser=None, pgpassword=None, pghost=None, pgport=None):
     '''
     Ensure that the named database is absent
 
@@ -79,11 +79,11 @@ def absent(name, pguser=None, pgpassword=None, host=None, port=None):
     pgpassword
         User pgpassword for authenticating pguser
 
-    host
-        The host of the database server
+    pghost
+        The pghost of the database server
 
-    port
-        The port of the database server
+    pgport
+        The pgport of the database server
     '''
     ret = {'name': name,
            'changes': {},
@@ -92,13 +92,13 @@ def absent(name, pguser=None, pgpassword=None, host=None, port=None):
 
     #check if db exists and remove it
     if __salt__['postgres.db_exists'](name, pguser=pguser, pgpassword=pgpassword,
-            host=host, port=port):
+            pghost=pghost, pgport=pgport):
         if __opts__['test']:
             ret['result'] = None
             ret['comment'] = 'Database {0} is set to be removed'.format(name)
             return ret
         if __salt__['postgres.db_remove'](name, pguser=pguser,
-                pgpassword=pgpassword, host=host, port=port):
+                pgpassword=pgpassword, pghost=pghost, pgport=pgport):
             ret['comment'] = 'Database {0} has been removed'.format(name)
             ret['changes'][name] = 'Absent'
             return ret

@@ -5,8 +5,8 @@ In order to connect to Postgres, certain configuration is required
 in /etc/salt/minion on the relevant minions. Some sample configs
 might look like::
 
-    postgres.host: 'localhost'
-    postgres.port: '5432'
+    postgres.pghost: 'localpghost'
+    postgres.pgport: '5432'
     postgres.pguser: 'postgres'
     postgres.pgpassword: 'Secret'
     postgres.db: 'postgres'
@@ -15,9 +15,9 @@ This data can also be passed into pillar. Options passed into opts will
 overwrite options passed into pillar
 '''
 
-import logging
-from salt.utils import check_or_die
-from salt.exceptions import CommandNotFoundError
+impgport logging
+from salt.utils impgport check_or_die
+from salt.exceptions impgport CommandNotFoundError
 
 
 log = logging.getLogger(__name__)
@@ -51,30 +51,30 @@ def version():
 def _connection_defaults(
         pguser=None,
         pgpassword=None,
-        host=None,
-        port=None):
+        pghost=None,
+        pgport=None):
     '''
-    Returns a tuple of (pguser, host, port) with config, pillar, or default
+    Returns a tuple of (pguser, pghost, pgport) with config, pillar, or default
     values assigned to missing values.
     '''
     if not pguser:
         pguser = __opts__.get('postgres.pguser') or __pillar__.get('postgres.pguser') or "postgres"
-    if not host:
-        host = __opts__.get('postgres.host') or __pillar__.get('postgres.host') or "127.0.0.1"
-    if not port:
-        port = __opts__.get('postgres.port') or __pillar__.get('postgres.port') or "5432"
+    if not pghost:
+        pghost = __opts__.get('postgres.pghost') or __pillar__.get('postgres.pghost') or "127.0.0.1"
+    if not pgport:
+        pgport = __opts__.get('postgres.pgport') or __pillar__.get('postgres.pgport') or "5432"
     if not pgpassword:
         pgpassword = (__opts__.get('postgres.pgpassword')
                 or __pillar__.get('postgres.pgpassword') or None)
 
-    return (pguser, pgpassword, host, port)
+    return (pguser, pgpassword, pghost, pgport)
 
 '''
 Database related actions
 '''
 
 
-def db_list(pguser=None, pgpassword=None, host=None, port=None):
+def db_list(pguser=None, pgpassword=None, pghost=None, pgport=None):
     '''
     Return a list of databases of a Postgres server using the output
     from the ``psql -l`` query.
@@ -83,16 +83,16 @@ def db_list(pguser=None, pgpassword=None, host=None, port=None):
 
         salt '*' postgres.db_list
     '''
-    (pguser, pgpassword, host, port) = _connection_defaults(
-            pguser, pgpassword, host, port)
+    (pguser, pgpassword, pghost, pgport) = _connection_defaults(
+            pguser, pgpassword, pghost, pgport)
 
     ret = []
     env = {}
     if pgpassword:
         env['PGPASSWORD'] = pgpassword
 
-    cmd = "psql -w -l -h {host} -U {pguser}  -p {port}".format(
-            host=host, pguser=pguser, port=port)
+    cmd = "psql -w -l -h {pghost} -U {pguser}  -p {pgport}".format(
+            pghost=pghost, pguser=pguser, pgport=pgport)
 
     lines = [x for x in __salt__['cmd.run'](cmd, env=env).split("\n") if len(x.split("|")) == 6]
     header = [x.strip() for x in lines[0].split("|")]
@@ -104,7 +104,7 @@ def db_list(pguser=None, pgpassword=None, host=None, port=None):
     return ret
 
 
-def db_exists(name, pguser=None, pgpassword=None, host=None, port=None):
+def db_exists(name, pguser=None, pgpassword=None, pghost=None, pgport=None):
     '''
     Checks if a database exists on the Postgres server.
 
@@ -112,10 +112,10 @@ def db_exists(name, pguser=None, pgpassword=None, host=None, port=None):
 
         salt '*' postgres.db_exists 'dbname'
     '''
-    (pguser, pgpassword, host, port) = _connection_defaults(
-            pguser, pgpassword, host, port)
+    (pguser, pgpassword, pghost, pgport) = _connection_defaults(
+            pguser, pgpassword, pghost, pgport)
 
-    databases = db_list(pguser=pguser, pgpassword=pgpassword, host=host, port=port)
+    databases = db_list(pguser=pguser, pgpassword=pgpassword, pghost=pghost, pgport=pgport)
     for db in databases:
         if name == dict(db).get('Name'):
             return True
@@ -126,8 +126,8 @@ def db_exists(name, pguser=None, pgpassword=None, host=None, port=None):
 def db_create(name,
               pguser=None,
               pgpassword=None,
-              host=None,
-              port=None,
+              pghost=None,
+              pgport=None,
               tablespace=None,
               encoding=None,
               local=None,
@@ -145,10 +145,10 @@ def db_create(name,
         salt '*' postgres.db_create 'dbname' template=template_postgis
 
     '''
-    (pguser, pgpassword, host, port) = _connection_defaults(pguser, pgpassword, host, port)
+    (pguser, pgpassword, pghost, pgport) = _connection_defaults(pguser, pgpassword, pghost, pgport)
 
     # check if db exists
-    if db_exists(name, pguser, pgpassword, host, port):
+    if db_exists(name, pguser, pgpassword, pghost, pgport):
         log.info("DB '{0}' already exists".format(name,))
         return False
 
@@ -157,8 +157,8 @@ def db_create(name,
     if pgpassword:
         env['PGPASSWORD'] = pgpassword
 
-    cmd = 'createdb -w -h {host} -U {pguser} -p {port} {name}'.format(
-        pguser=pguser, host=host, port=port, name=name)
+    cmd = 'createdb -w -h {pghost} -U {pguser} -p {pgport} {name}'.format(
+        pguser=pguser, pghost=pghost, pgport=pgport, name=name)
 
     if tablespace:
         cmd = "{0} -D {1}".format(cmd, tablespace)
@@ -179,7 +179,7 @@ def db_create(name,
         cmd = "{0} -O {1}".format(cmd, owner)
 
     if template:
-        if db_exists(template, pguser, pgpassword, host, port):
+        if db_exists(template, pguser, pgpassword, pghost, pgport):
             cmd = "{cmd} -T {template}".format(cmd=cmd, template=template)
         else:
             log.info("template '{0}' does not exist.".format(template, ))
@@ -187,14 +187,14 @@ def db_create(name,
 
     __salt__['cmd.run'](cmd, env=env)
 
-    if db_exists(name, pguser, pgpassword, host, port):
+    if db_exists(name, pguser, pgpassword, pghost, pgport):
         return True
     else:
         log.info("Failed to create DB '{0}'".format(name,))
         return False
 
 
-def db_remove(name, pguser=None, pgpassword=None, host=None, port=None):
+def db_remove(name, pguser=None, pgpassword=None, pghost=None, pgport=None):
     '''
     Removes a databases from the Postgres server.
 
@@ -202,11 +202,11 @@ def db_remove(name, pguser=None, pgpassword=None, host=None, port=None):
 
         salt '*' postgres.db_remove 'dbname'
     '''
-    (pguser, pgpassword, host, port) = _connection_defaults(
-            pguser, pgpassword, host, port)
+    (pguser, pgpassword, pghost, pgport) = _connection_defaults(
+            pguser, pgpassword, pghost, pgport)
 
     # check if db exists
-    if not db_exists(name, pguser, pgpassword, host, port):
+    if not db_exists(name, pguser, pgpassword, pghost, pgport):
         log.info("DB '{0}' does not exist".format(name,))
         return False
 
@@ -216,11 +216,11 @@ def db_remove(name, pguser=None, pgpassword=None, host=None, port=None):
     if pgpassword:
         env['PGPASSWORD'] = pgpassword
 
-    cmd = 'dropdb -w -h {host} -U {pguser} -p {port} {name}'.format(
-        pguser=pguser, host=host, port=port, name=name)
+    cmd = 'dropdb -w -h {pghost} -U {pguser} -p {pgport} {name}'.format(
+        pguser=pguser, pghost=pghost, pgport=pgport, name=name)
 
     __salt__['cmd.run'](cmd, env=env)
-    if not db_exists(name, pguser, pgpassword, host, port):
+    if not db_exists(name, pguser, pgpassword, pghost, pgport):
         return True
     else:
         log.info("Failed to delete DB '{0}'.".format(name, ))
@@ -230,7 +230,7 @@ def db_remove(name, pguser=None, pgpassword=None, host=None, port=None):
 User related actions
 '''
 
-def user_list(pguser=None, pgpassword=None, host=None, port=None):
+def user_list(pguser=None, pgpassword=None, pghost=None, pgport=None):
     '''
     Return a list of users of a Postgres server.
 
@@ -238,16 +238,16 @@ def user_list(pguser=None, pgpassword=None, host=None, port=None):
 
         salt '*' postgres.user_list
     '''
-    (pguser, pgpassword, host, port) = _connection_defaults(
-            pguser, pgpassword, host, port)
+    (pguser, pgpassword, pghost, pgport) = _connection_defaults(
+            pguser, pgpassword, pghost, pgport)
 
     ret = []
     env = {}
     if pgpassword:
         env['PGPASSWORD'] = pgpassword
 
-    cmd = "psql -w -h {host} -U {pguser} -p {port} -P pager postgres -c \"SELECT * FROM pg_roles\"".format(
-        host=host, pguser=pguser, port=port)
+    cmd = "psql -w -h {pghost} -U {pguser} -p {pgport} -P pager postgres -c \"SELECT * FROM pg_roles\"".format(
+        pghost=pghost, pguser=pguser, pgport=pgport)
 
     lines = [x for x in __salt__['cmd.run'](cmd, env=env).split("\n") if len(x.split("|")) == 13]
     header = [x.strip() for x in lines[0].split("|")]
@@ -258,7 +258,7 @@ def user_list(pguser=None, pgpassword=None, host=None, port=None):
 
     return ret
 
-def user_exists(name, pguser=None, pgpassword=None, host=None, port=None):
+def user_exists(name, pguser=None, pgpassword=None, pghost=None, pgport=None):
     '''
     Checks if a user exists on the Postgres server.
 
@@ -266,10 +266,10 @@ def user_exists(name, pguser=None, pgpassword=None, host=None, port=None):
 
         salt '*' postgres.user_exists 'username'
     '''
-    (pguser, pgpassword, host, port) = _connection_defaults(
-            pguser, pgpassword, host, port)
+    (pguser, pgpassword, pghost, pgport) = _connection_defaults(
+            pguser, pgpassword, pghost, pgport)
 
-    users = user_list(pguser=pguser, pgpassword=pgpassword, host=host, port=port)
+    users = user_list(pguser=pguser, pgpassword=pgpassword, pghost=pghost, pgport=pgport)
     for user in users:
         if name == dict(user).get('rolname'):
             return True
@@ -279,8 +279,8 @@ def user_exists(name, pguser=None, pgpassword=None, host=None, port=None):
 def user_create(username,
                 pguser=None,
                 pgpassword=None,
-                host=None,
-                port=None,
+                pghost=None,
+                pgport=None,
                 createdb=False,
                 createuser=False,
                 encrypted=False,
@@ -290,13 +290,13 @@ def user_create(username,
 
     CLI Examples::
 
-        salt '*' postgres.user_create 'username' pguser='pguser' host='hostname' port='port' password='password'
+        salt '*' postgres.user_create 'username' pguser='pguser' pghost='pghostname' pgport='pgport' password='password'
     '''
-    (pguser, pgpassword, host, port) = _connection_defaults(
-            pguser, pgpassword, host, port)
+    (pguser, pgpassword, pghost, pgport) = _connection_defaults(
+            pguser, pgpassword, pghost, pgport)
 
     # check if user exists
-    if user_exists(username, pguser, pgpassword, host, port):
+    if user_exists(username, pguser, pgpassword, pghost, pgport):
         log.info("User '{0}' already exists".format(username,))
         return False
 
@@ -317,15 +317,15 @@ def user_create(username,
     if pgpassword:
         env['PGPASSWORD'] = pgpassword
 
-    cmd = 'psql -w -h {host} -U {pguser} -p {port} -c "{sub_cmd}"'.format(
-        host=host, pguser=pguser, port=port, sub_cmd=sub_cmd)
+    cmd = 'psql -w -h {pghost} -U {pguser} -p {pgport} -c "{sub_cmd}"'.format(
+        pghost=pghost, pguser=pguser, pgport=pgport, sub_cmd=sub_cmd)
     return __salt__['cmd.run'](cmd, env=env)
 
 def user_update(username,
                 pguser=None,
                 pgpassword=None,
-                host=None,
-                port=None,
+                pghost=None,
+                pgport=None,
                 createdb=False,
                 createuser=False,
                 encrypted=False,
@@ -335,13 +335,13 @@ def user_update(username,
 
     CLI Examples::
 
-        salt '*' postgres.user_create 'username' pguser='pguser' host='hostname' port='port' password='password'
+        salt '*' postgres.user_create 'username' pguser='pguser' pghost='pghostname' pgport='pgport' password='password'
     '''
-    (pguser, pgpassword, host, port) = _connection_defaults(
-            pguser, pgpassword, host, port)
+    (pguser, pgpassword, pghost, pgport) = _connection_defaults(
+            pguser, pgpassword, pghost, pgport)
 
     # check if user exists
-    if not user_exists(username, pguser, host, port):
+    if not user_exists(username, pguser, pghost, pgport):
         log.info("User '{0}' does not exist".format(username,))
         return False
 
@@ -362,11 +362,11 @@ def user_update(username,
     if pgpassword:
         env['PGPASSWORD'] = pgpassword
 
-    cmd = 'psql -w -h {host} -U {pguser} -p {port} -c "{sub_cmd}"'.format(
-        host=host, pguser=pguser, port=port, sub_cmd=sub_cmd)
+    cmd = 'psql -w -h {pghost} -U {pguser} -p {pgport} -c "{sub_cmd}"'.format(
+        pghost=pghost, pguser=pguser, pgport=pgport, sub_cmd=sub_cmd)
     return __salt__['cmd.run'](cmd, env=env)
 
-def user_remove(username, pguser=None, pgpassword=None, host=None, port=None):
+def user_remove(username, pguser=None, pgpassword=None, pghost=None, pgport=None):
     '''
     Removes a user from the Postgres server.
 
@@ -374,11 +374,11 @@ def user_remove(username, pguser=None, pgpassword=None, host=None, port=None):
 
         salt '*' postgres.user_remove 'username'
     '''
-    (pguser, pgpassword, host, port) = _connection_defaults(
-            pguser, pgpassword, host, port)
+    (pguser, pgpassword, pghost, pgport) = _connection_defaults(
+            pguser, pgpassword, pghost, pgport)
 
     # check if user exists
-    if not user_exists(username, pguser, host, port):
+    if not user_exists(username, pguser, pghost, pgport):
         log.info("User '{0}' does not exist".format(username,))
         return False
 
@@ -387,10 +387,10 @@ def user_remove(username, pguser=None, pgpassword=None, host=None, port=None):
     if pgpassword:
         env['PGPASSWORD'] = pgpassword
 
-    cmd = 'dropuser -w -h {host} -U {pguser} -p {port} {username}'.format(
-        pguser=pguser, host=host, port=port, username=username)
+    cmd = 'dropuser -w -h {pghost} -U {pguser} -p {pgport} {username}'.format(
+        pguser=pguser, pghost=pghost, pgport=pgport, username=username)
     __salt__['cmd.run'](cmd, env=env)
-    if not user_exists(username, pguser, host, port):
+    if not user_exists(username, pguser, pghost, pgport):
         return True
     else:
         log.info("Failed to delete user '{0}'.".format(username, ))

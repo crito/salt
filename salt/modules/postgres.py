@@ -15,9 +15,9 @@ This data can also be passed into pillar. Options passed into opts will
 overwrite options passed into pillar
 '''
 
-impgport logging
-from salt.utils impgport check_or_die
-from salt.exceptions impgport CommandNotFoundError
+import logging
+from salt.utils import check_or_die
+from salt.exceptions import CommandNotFoundError
 
 
 log = logging.getLogger(__name__)

@@ -15,7 +15,7 @@ Databases can be set as either absent or present
 def present(
         name,
         owner=None,
-        user=None,
+        pguser=None,
         pgpassword=None,
         host=None,
         port=None):
@@ -28,11 +28,11 @@ def present(
     owner
         The username of the database owner
 
-    user
+    pguser
         Use user for this connection
 
     pgpassword
-        User pgpassword for authenticating user
+        User pgpassword for authenticating pguser
 
     host
         The host of the database server
@@ -46,7 +46,7 @@ def present(
            'comment': 'Database {0} is already present'.format(name)}
 
     # check if database exists
-    if __salt__['postgres.db_exists'](name, user=user, pgpassword=pgpassword,
+    if __salt__['postgres.db_exists'](name, pguser=pguser, pgpassword=pgpassword,
             host=host, port=port):
         return ret
 
@@ -55,7 +55,7 @@ def present(
         ret['result'] = None
         ret['comment'] = 'Database {0} is set to be created'.format(name)
         return ret
-    if __salt__['postgres.db_create'](name, owner=owner, user=user,
+    if __salt__['postgres.db_create'](name, owner=owner, pguser=pguser,
             pgpassword=pgpassword, host=host, port=port):
         ret['comment'] = 'The database {0} has been created'.format(name)
         ret['changes'][name] = 'Present'
@@ -66,18 +66,18 @@ def present(
     return ret
 
 
-def absent(name, user=None, pgpassword=None, host=None, port=None):
+def absent(name, pguser=None, pgpassword=None, host=None, port=None):
     '''
     Ensure that the named database is absent
 
     name
         The name of the database to remove
 
-    user
+    pguser
         Use user for this connection
 
     pgpassword
-        User pgpassword for authenticating user
+        User pgpassword for authenticating pguser
 
     host
         The host of the database server
@@ -91,13 +91,13 @@ def absent(name, user=None, pgpassword=None, host=None, port=None):
            'comment': ''}
 
     #check if db exists and remove it
-    if __salt__['postgres.db_exists'](name, user=user, pgpassword=pgpassword,
+    if __salt__['postgres.db_exists'](name, pguser=pguser, pgpassword=pgpassword,
             host=host, port=port):
         if __opts__['test']:
             ret['result'] = None
             ret['comment'] = 'Database {0} is set to be removed'.format(name)
             return ret
-        if __salt__['postgres.db_remove'](name, user=user,
+        if __salt__['postgres.db_remove'](name, pguser=pguser,
                 pgpassword=pgpassword, host=host, port=port):
             ret['comment'] = 'Database {0} has been removed'.format(name)
             ret['changes'][name] = 'Absent'

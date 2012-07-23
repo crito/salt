@@ -12,7 +12,7 @@ Databases can be set as either absent or present
 '''
 
 
-def present(name, owner=None):
+def present(name, owner=None, host=None, port=None):
     '''
     Ensure that the named database is present with the specified properties
 
@@ -21,14 +21,20 @@ def present(name, owner=None):
 
     owner
         The username of the database owner
+
+    host
+        The host of the database server
+
+    port
+        The port of the database server
     '''
     ret = {'name': name,
            'changes': {},
            'result': True,
            'comment': 'Database {0} is already present'.format(name)}
-    
+
     # check if database exists
-    if __salt__['postgres.db_exists'](name):
+    if __salt__['postgres.db_exists'](name, host=host, port=port):
         return ret
 
     # The database is not present, make it!
@@ -36,7 +42,7 @@ def present(name, owner=None):
         ret['result'] = None
         ret['comment'] = 'Database {0} is set to be created'.format(name)
         return ret
-    if __salt__['postgres.db_create'](name, owner=owner):
+    if __salt__['postgres.db_create'](name, owner=owner, host=host, port=port):
         ret['comment'] = 'The database {0} has been created'.format(name)
         ret['changes'][name] = 'Present'
     else:
@@ -46,12 +52,18 @@ def present(name, owner=None):
     return ret
 
 
-def absent(name):
+def absent(name, host=None, port=None):
     '''
     Ensure that the named database is absent
 
     name
         The name of the database to remove
+
+    host
+        The host of the database server
+
+    port
+        The port of the database server
     '''
     ret = {'name': name,
            'changes': {},
@@ -59,12 +71,12 @@ def absent(name):
            'comment': ''}
 
     #check if db exists and remove it
-    if __salt__['postgres.db_exists'](name):
+    if __salt__['postgres.db_exists'](name, host=host, port=port):
         if __opts__['test']:
             ret['result'] = None
             ret['comment'] = 'Database {0} is set to be removed'.format(name)
             return ret
-        if __salt__['postgres.db_remove'](name):
+        if __salt__['postgres.db_remove'](name, host=host, port=port):
             ret['comment'] = 'Database {0} has been removed'.format(name)
             ret['changes'][name] = 'Absent'
             return ret

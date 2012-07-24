@@ -101,14 +101,12 @@ def absent(name, pguser=None, pgpassword=None, pghost=None, pgport=None,
             ret['result'] = None
             ret['comment'] = 'Database {0} is set to be removed'.format(name)
             return ret
-        if force:
-            if __salt__['postgres._disconnect_db'](name, pguser=pguser,
-                    pgpassword=pgpassword, pghost=pghost, pgport=pgport):
-                if __salt__['postgres.db_remove'](name, pguser=pguser,
-                        pgpassword=pgpassword, pghost=pghost, pgport=pgport):
-                    ret['comment'] = 'Database {0} has been removed'.format(name)
-                    ret['changes'][name] = 'Absent'
-                    return ret
+        if __salt__['postgres.db_remove'](name, pguser=pguser,
+                pgpassword=pgpassword, pghost=pghost, pgport=pgport,
+                force=force):
+            ret['comment'] = 'Database {0} has been removed'.format(name)
+            ret['changes'][name] = 'Absent'
+            return ret
 
     # fallback
     ret['comment'] = (

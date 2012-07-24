@@ -221,7 +221,7 @@ def db_remove(name, pguser=None, pgpassword=None, pghost=None, pgport=None,
         # Force a disconnect
         query = ('SELECT pg_terminate_backend(pg_stat_activity.procpid) '
                 'FROM pg_stat_activity WHERE '
-                'pg_stat_activity.datname={name}'.format(name=name))
+                'pg_stat_activity.datname="{name}"'.format(name=name))
         cmd = 'psql -w -h {pghost} -U {pguser} -p {pgport} -c "{query}"'.format(
             pguser=pguser, pghost=pghost, pgport=pgport,
             query=query)

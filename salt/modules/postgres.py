@@ -194,6 +194,32 @@ def db_create(name,
         return False
 
 
+def _disconnect_db(name, pguser=None, pgpassword=None, pghost=None,
+        pgport=None):
+    '''Forces a disconnect of all clients for a certain database.
+
+    Its meant to be called from the states, and not standalone.
+    '''
+    (pguser, pgpassword, pghost, pgport) = _connection_defaults(
+            pguser, pgpassword, pghost, pgport)
+
+    env = {}
+
+    if pgpassword:
+        env['PGPASSWORD'] = pgpassword
+
+    query = ('SELECT pg_terminate_backend(pg_stat_activity.procpid) '
+            'FROM pg_stat_activity WHERE '
+            'pg_stat_activity.datname={name}'.format(name=name))
+    cmd = 'psql -w -h {pghost} -U {pguser} -p {pgport} -c "{query}"'.format(
+        pguser=pguser, pghost=pghost, pgport=pgport,
+        query=query)
+
+    __salt__['cmd.run'](cmd, env=env)
+
+    return True
+
+
 def db_remove(name, pguser=None, pgpassword=None, pghost=None, pgport=None):
     '''
     Removes a databases from the Postgres server.

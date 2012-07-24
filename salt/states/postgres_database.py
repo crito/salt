@@ -66,7 +66,8 @@ def present(
     return ret
 
 
-def absent(name, pguser=None, pgpassword=None, pghost=None, pgport=None):
+def absent(name, pguser=None, pgpassword=None, pghost=None, pgport=None,
+        force=False):
     '''
     Ensure that the named database is absent
 
@@ -84,6 +85,9 @@ def absent(name, pguser=None, pgpassword=None, pghost=None, pgport=None):
 
     pgport
         The pgport of the database server
+
+    force
+        Boolean, force to end all connections before removing a database
     '''
     ret = {'name': name,
            'changes': {},
@@ -97,11 +101,14 @@ def absent(name, pguser=None, pgpassword=None, pghost=None, pgport=None):
             ret['result'] = None
             ret['comment'] = 'Database {0} is set to be removed'.format(name)
             return ret
-        if __salt__['postgres.db_remove'](name, pguser=pguser,
-                pgpassword=pgpassword, pghost=pghost, pgport=pgport):
-            ret['comment'] = 'Database {0} has been removed'.format(name)
-            ret['changes'][name] = 'Absent'
-            return ret
+        if force:
+            if __salt__['postgres._disconnect_db'](name, pguser=pguser,
+                    pgpassword=pgpassword, pghost=pghost, pgport=pgport):
+                if __salt__['postgres.db_remove'](name, pguser=pguser,
+                        pgpassword=pgpassword, pghost=pghost, pgport=pgport):
+                    ret['comment'] = 'Database {0} has been removed'.format(name)
+                    ret['changes'][name] = 'Absent'
+                    return ret
 
     # fallback
     ret['comment'] = (
